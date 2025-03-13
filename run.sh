@@ -1,19 +1,48 @@
 #!/bin/bash
 
-TMPDIR=./tmp
+TEMP_DIR=./tmp
+FAILED_DIR=./error
+TIMEMAP_BASE=http://web.archive.org/web/timemap/link/
 
-if [ ! -d $TMPDIR ]; then
-    mkdir $TMPDIR
+if [ ! -d $TEMP_DIR ]; then
+    mkdir $TEMP_DIR
+fi
+
+if [ ! -d $FAILED_DIR ]; then
+    mkdir $FAILED_DIR
 fi
 
 # Ignore empty directories
 shopt -s nullglob
 
+function info {
+    T_NOW=`date +%Y-%m-%dT%H:%M:%S`
+    echo "${T_NOW} [INFO] : $0 - $1" 
+}
+
+function warn {
+    T_NOW=`date +%Y-%m-%dT%H:%M:%S`
+    echo "${T_NOW} [WARN] : $0 - $1"
+}
+
+function debug {
+    T_NOW=`date +%Y-%m-%dT%H:%M:%S`
+    echo "${T_NOW} [DEBUG] : $0 - $1"
+}
+
+function error {
+    T_NOW=`date +%Y-%m-%dT%H:%M:%S`
+    echo "${T_NOW} [ERROR] :  $0 - $1" 
+}
+
 function send_announce {
     DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-    > ${TMPDIR}/announce.jsonld cat << EOF
+    > ${TEMP_DIR}/announce.jsonld cat << EOF
 {
-  "@context": "https://www.w3.org/ns/activitystreams",
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    { "iana": "https://www.iana.org/" }
+  ],
   "id": "urn:uuid:9ec17fd7-f0f1-4d97-b421-29bfad935aad",
   "type": "Announce",
   "published": "${DATE}",
@@ -23,52 +52,72 @@ function send_announce {
     "inbox": "http://mycontributions.info/service/m/inbox/",
     "type": "Service"
   },
+  "context": "${OBJECT}",
+  "inReplyTo": "${ACTIVITY_ID}",
   "object": {
-    "id": "${ARCHIVED_URL}",
-    "type": "WebPage"
+    "id": "${TIMEMAP_BASE}${OBJECT}",
+    "type": "Document",
+    "iana:original": "${OBJECT}",
+    "iana:memento": "${ARCHIVED_URL}"
+  },
+  "target": {
+    "id": "${ACTOR_ID}",
+    "type": "${ACTOR_TYPE}",
+    "name": "${ACTOR_NAME}",
+    "inbox": "${ACTOR_INBOX}"
   }
 }
 EOF
-    echo "INFO - sending announce.jsonld to ${ACTOR_INBOX}"
+    info "sending announce.jsonld to ${ACTOR_INBOX}"
     
-    exponential-backoff-tool -a -M -r 2 -e "x*x" "ldn-sender ${ACTOR_INBOX} ${TMPDIR}/announce.jsonld"
+    exponential-backoff-tool -a -M -r 2 -e "x*x" "ldn-sender ${ACTOR_INBOX} ${TEMP_DIR}/announce.jsonld"
 
     if [ $? -eq 0 ]; then
-        echo "INFO - done 👍"
+        info "done 👍"
         exit 0
     else 
-        echo "INFO - failed 👎"
+        D=$(date +%Y%m%d%H%M%S)
+        error "failed 👎"
+        mv ${TEMP_DIR}/announce.jsonld ${FAILED_DIR}/${D}-announce.jsonld
         exit 2
     fi
 }
 
 for f in ./inbox/*.jsonld ; do
-    echo "INFO - processing $f..."
+    info "processing $f..."
     
+    ACTIVITY_ID=$(jq -r ".id" $f)
     ACTOR_ID=$(jq -r ".actor.id" $f)
     ACTOR_INBOX=$(jq -r ".actor.inbox" $f)
-
-    if [[ "${ACTOR_ID}" == "" ]] || 
-       [[ "${ACTOR_INBOX}" == "" ]] ; then
-       echo "ERROR - bad actor found in $f"
-       continue
-    fi
-
-    echo "INFO - actor = ${ACTOR_ID} @ ${ACTOR_INBOX}"
-
+    ACTOR_NAME=$(jq -r ".actor.name" $f)
+    ACTOR_TYPE=$(jq -r ".actor.type" $f)
     OBJECT=$(jq -r ".object.id" $f)
 
+    rm -f $f
+
+    if [[ "${ACTIVITY_ID}" == "" ]]; then
+       error "no activity id found in $f"
+       continue
+    fi
+    if [[ "${ACTOR_ID}" == "" ]] || 
+       [[ "${ACTOR_NAME}" == "" ]] ||
+       [[ "${ACTOR_TYPE}" == "" ]] ||
+       [[ "${ACTOR_INBOX}" == "" ]] ; then
+       error "bad actor found in $f"
+       continue
+    fi
     if [ "${OBJECT}" == "" ]; then
-        echo "ERROR - no object.id found in $f"
+        error "no object.id found in $f"
         continue
-    else
-        echo "INFO - object = ${OBJECT}"
     fi
 
-    echo "INFO - starting wayback on ${OBJECT}"
-    #wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TMPDIR}/wayback.output
+    error "actor = ${ACTOR_ID} @ ${ACTOR_INBOX}"
+    error "object = ${OBJECT}"
 
-    ARCHIVED_URL=$(grep "IA: " ${TMPDIR}/wayback.output | sed -e 's/.*IA: //')
+    error "starting wayback on ${OBJECT}"
+    wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
+
+    ARCHIVED_URL=$(grep "IA: " ${TEMP_DIR}/wayback.output | sed -e 's/.*IA: //')
 
     send_announce
 done

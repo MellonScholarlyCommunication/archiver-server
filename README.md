@@ -21,3 +21,9 @@ ldn-receiver --port 4000
 ```
 ldn-sender http://localhost:3333/inbox/ data/example.jsonld
 ```
+
+## Run an archiver batch
+
+```
+./run.sh
+```
