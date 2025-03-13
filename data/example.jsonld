@@ -4,9 +4,9 @@
   "type": "Offer",
   "published": "2024-08-01T07:00:11.000Z",
   "actor": {
-    "id": "http://mycontributions.info/service/m/profile/card#me",
+    "id": "http://localhost/profile/card#me",
     "name": "Mastodon Bot",
-    "inbox": "http://mycontributions.info/service/m/inbox/",
+    "inbox": "http://localhost/inbox/",
     "type": "Service"
   },
   "object": {
