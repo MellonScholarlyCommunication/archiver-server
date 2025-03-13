@@ -1,5 +1,9 @@
 # Archiver Service
 
+An [Event Notifications](https://www.eventnotifications.net) based implementation of an Web archiving service.
+
+This service is a collection of Bash scripts to run a small Web archiving services that can be triggered by sending LDN+AS2 `Offer` messages to an LDN Inbox.
+
 ## Dependencies
 
 ```

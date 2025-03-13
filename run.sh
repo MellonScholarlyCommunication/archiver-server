@@ -3,6 +3,12 @@
 TEMP_DIR=./tmp
 FAILED_DIR=./error
 TIMEMAP_BASE=http://web.archive.org/web/timemap/link/
+SEND_ATTEMPTS=10
+LOCK_FILE=${TEMP_DIR}/lock
+
+# Set a sleep to keep from getting blocked from Web archives with too
+# manuy exists
+SLEEP=30
 
 if [ ! -d $TEMP_DIR ]; then
     mkdir $TEMP_DIR
@@ -70,19 +76,34 @@ function send_announce {
 EOF
     info "sending announce.jsonld to ${ACTOR_INBOX}"
     
-    exponential-backoff-tool -a -M -r 2 -e "x*x" "ldn-sender ${ACTOR_INBOX} ${TEMP_DIR}/announce.jsonld"
+    exponential-backoff-tool -a -M -r $SEND_ATTEMPTS -e "x*x" "ldn-sender ${ACTOR_INBOX} ${TEMP_DIR}/announce.jsonld"
 
     if [ $? -eq 0 ]; then
         info "done 👍"
-        exit 0
     else 
         D=$(date +%Y%m%d%H%M%S)
         error "failed 👎"
         mv ${TEMP_DIR}/announce.jsonld ${FAILED_DIR}/${D}-announce.jsonld
-        exit 2
     fi
 }
 
+function cleanup {
+  echo "Removing $LOCK_FILE"
+  rm  -r $LOCK_FILE
+}
+
+trap cleanup EXIT
+
+if [ -f $LOCK_FILE ]; then
+    error "$LOCK_FILE found exiting"
+    exit 2
+fi
+
+info "start"
+info "locking $LOCKFILE"
+touch $LOCK_FILE
+
+info "scanning ./inbox"
 for f in ./inbox/*.jsonld ; do
     info "processing $f..."
     
@@ -111,13 +132,21 @@ for f in ./inbox/*.jsonld ; do
         continue
     fi
 
-    error "actor = ${ACTOR_ID} @ ${ACTOR_INBOX}"
-    error "object = ${OBJECT}"
+    info "actor = ${ACTOR_ID} @ ${ACTOR_INBOX}"
+    info "object = ${OBJECT}"
 
-    error "starting wayback on ${OBJECT}"
-    wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
+    info "starting wayback on ${OBJECT}"
+   # wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
 
     ARCHIVED_URL=$(grep "IA: " ${TEMP_DIR}/wayback.output | sed -e 's/.*IA: //')
 
     send_announce
+
+    info "sleeping $SLEEP seconds..."
+    sleep $SLEEP
 done
+
+info "unlocking $LOCK_FILE"
+rm $LOCK_FILE
+
+info "done"
