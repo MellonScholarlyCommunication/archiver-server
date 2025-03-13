@@ -17,7 +17,7 @@ go install github.com/blackducksoftware/exponential-backoff-tool@latest
 ## Start service
 
 ```
-ldn-receiver --port 4000 
+ldn-receiver
 ```
 
 ## Send an archivation offer
@@ -63,11 +63,17 @@ pm2 log
 Build the docker image:
 
 ```
-docker build . -t hochstenbach/archiver-server:v0.0.1
+make docker-build
 ```
 
-Run the docker image
+Run the docker image:
 
 ```
-docker container run -p 3002:3002 --rm hochstenbach/archiver-server:v0.0.1
+make docker-run
+```
+
+If you are me, push the image to Docker Hub:
+
+```
+make docker-push
 ```

@@ -90,8 +90,10 @@ EOF
 }
 
 function cleanup {
-  echo "Removing $LOCK_FILE"
-  rm  -r $LOCK_FILE
+    if [ -f $LOCK_FILE ]; then
+        echo "Removing $LOCK_FILE"
+        rm  -f $LOCK_FILE
+    fi
 }
 
 trap cleanup EXIT
@@ -147,10 +149,5 @@ for f in ./inbox/*.jsonld ; do
     info "sleeping $SLEEP seconds..."
     sleep $SLEEP
 done
-
-if [ -f $LOCK_FILE ]; then
-    info "unlocking $LOCK_FILE"
-    rm $LOCK_FILE
-fi
 
 info "done"
