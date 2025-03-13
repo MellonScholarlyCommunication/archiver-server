@@ -42,6 +42,7 @@ function error {
 }
 
 function send_announce {
+    UUID=$(uuidgen | tr A-Z a-z)
     DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     > ${TEMP_DIR}/announce.jsonld cat << EOF
 {
@@ -49,7 +50,7 @@ function send_announce {
     "https://www.w3.org/ns/activitystreams",
     { "iana": "https://www.iana.org/" }
   ],
-  "id": "urn:uuid:9ec17fd7-f0f1-4d97-b421-29bfad935aad",
+  "id": "urn:uuid:${UUID}",
   "type": "Announce",
   "published": "${DATE}",
   "actor": {
@@ -83,7 +84,8 @@ EOF
     else 
         D=$(date +%Y%m%d%H%M%S)
         error "failed 👎"
-        mv ${TEMP_DIR}/announce.jsonld ${FAILED_DIR}/${D}-announce.jsonld
+        mv ${TEMP_DIR}/announce.jsonld ${FAILED_DIR}/${D}-$$-announce.jsonld
+        mv ${TEMP_DIR}/wayback.output ${FAILED_DIR}/${D}-$$-wayback.output
     fi
 }
 
@@ -136,7 +138,7 @@ for f in ./inbox/*.jsonld ; do
     info "object = ${OBJECT}"
 
     info "starting wayback on ${OBJECT}"
-   # wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
+    wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
 
     ARCHIVED_URL=$(grep "IA: " ${TEMP_DIR}/wayback.output | sed -e 's/.*IA: //')
 
