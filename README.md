@@ -31,3 +31,29 @@ ldn-sender http://localhost:3333/inbox/ data/example.jsonld
 ```
 ./run.sh
 ```
+
+## Run as a service
+
+Install dependencies
+
+```
+npm install -g pm2
+```
+
+Start service
+
+```
+pm2 start ecosystem.config.js
+```
+
+Stop service
+
+```
+pm2 stop ecosystem.config.js
+```
+
+Check logs
+
+```
+pm2 log
+```
