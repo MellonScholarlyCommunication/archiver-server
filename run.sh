@@ -148,7 +148,9 @@ for f in ./inbox/*.jsonld ; do
     sleep $SLEEP
 done
 
-info "unlocking $LOCK_FILE"
-rm $LOCK_FILE
+if [ -f $LOCK_FILE ]; then
+    info "unlocking $LOCK_FILE"
+    rm $LOCK_FILE
+fi
 
 info "done"

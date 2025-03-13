@@ -57,3 +57,17 @@ Check logs
 ```
 pm2 log
 ```
+
+## Docker
+
+Build the docker image:
+
+```
+docker build . -t hochstenbach/archiver-server:v0.0.1
+```
+
+Run the docker image
+
+```
+docker container run -p 3002:3002 --rm hochstenbach/archiver-server:v0.0.1
+```
