@@ -4,15 +4,18 @@ run:
 	./run.sh
 
 demo:
-	ldn-sender http://localhost:3333/inbox/ data/example.jsonld
+	ldn-sender http://localhost:3006/inbox/ data/example.jsonld
 
 docker-build:
 	docker build . -t hochstenbach/archiver-server:v0.0.1
 
 docker-run:
-	docker run -p 3006:3006 --rm hochstenbach/archiver-server:v0.0.1	
+	docker run --rm -p 3006:3006 -v `pwd`/tmp:/app/tmp -v `pwd`/inbox:/app/inbox -v `pwd`/error:/app/error hochstenbach/archiver-server:v0.0.1	
 
-docker-push:
+docker-interactive:
+	docker run --rm -it hochstenbach/archiver-server:v0.0.1 sh
+
+push:
 	docker push hochstenbach/archiver-server:v0.0.1
 
 unlock:

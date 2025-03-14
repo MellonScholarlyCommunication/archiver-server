@@ -16,6 +16,10 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
+RUN wget -O /bin/jq https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 
+
+RUN chmod 755 /bin/jq
+
 COPY . .
 
 COPY ecosystem.config.js-docker ecosystem.config.js

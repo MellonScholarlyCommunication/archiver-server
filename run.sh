@@ -94,6 +94,7 @@ function cleanup {
         echo "Removing $LOCK_FILE"
         rm  -f $LOCK_FILE
     fi
+    exit 0
 }
 
 trap cleanup EXIT
