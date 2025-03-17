@@ -22,6 +22,10 @@ RUN chmod 755 /bin/jq
 
 COPY . .
 
+COPY docker/uuidgen /usr/local/bin/uuidgen
+
+RUN chmod 755 /usr/local/bin/uuidgen
+
 COPY ecosystem.config.js-docker ecosystem.config.js
 
 RUN npm install -g pm2

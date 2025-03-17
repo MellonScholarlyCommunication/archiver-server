@@ -13,7 +13,7 @@ docker-run:
 	docker run --rm -p 3006:3006 -v `pwd`/tmp:/app/tmp -v `pwd`/inbox:/app/inbox -v `pwd`/error:/app/error hochstenbach/archiver-server:v0.0.1	
 
 docker-interactive:
-	docker run --rm -it hochstenbach/archiver-server:v0.0.1 sh
+	docker run --rm -v `pwd`/tmp:/app/tmp -v `pwd`/inbox:/app/inbox -v `pwd`/error:/app/error -it hochstenbach/archiver-server:v0.0.1 sh
 
 push:
 	docker push hochstenbach/archiver-server:v0.0.1

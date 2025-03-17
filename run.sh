@@ -3,11 +3,11 @@
 TEMP_DIR=./tmp
 FAILED_DIR=./error
 TIMEMAP_BASE=http://web.archive.org/web/timemap/link/
-SEND_ATTEMPTS=10
+SEND_ATTEMPTS=2
 LOCK_FILE=${TEMP_DIR}/lock
 
 # Set a sleep to keep from getting blocked from Web archives with too
-# manuy exists
+# many exists
 SLEEP=30
 
 if [ ! -d $TEMP_DIR ]; then
@@ -90,6 +90,7 @@ EOF
 }
 
 function cleanup {
+    echo "Caught: $?"
     if [ -f $LOCK_FILE ]; then
         echo "Removing $LOCK_FILE"
         rm  -f $LOCK_FILE
