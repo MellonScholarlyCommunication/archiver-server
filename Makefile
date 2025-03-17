@@ -22,4 +22,4 @@ unlock:
 	rm tmp/lock
 	
 clean:
-	rm -rf error/* tmp/*
+	rm -f error/* tmp/* inbox/*

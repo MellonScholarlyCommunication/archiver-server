@@ -144,7 +144,11 @@ for f in ./inbox/*.jsonld ; do
     info "starting wayback on ${OBJECT}"
     wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
 
+    info "wayback done..."
+
     ARCHIVED_URL=$(grep "IA: " ${TEMP_DIR}/wayback.output | sed -e 's/.*IA: //')
+
+    info "extracted ${ARCHIVED_URL}"
 
     send_announce
 
