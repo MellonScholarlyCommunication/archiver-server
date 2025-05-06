@@ -3,6 +3,9 @@
 run:
 	./run.sh
 
+server:
+	ldn-receiver -port 3006
+
 demo:
 	ldn-sender http://localhost:3006/inbox/ data/example.jsonld
 
@@ -22,4 +25,4 @@ unlock:
 	rm tmp/lock
 	
 clean:
-	rm -f error/* tmp/* inbox/*
+	rm -f error/* tmp/* inbox/* public/*

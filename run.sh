@@ -2,9 +2,12 @@
 
 TEMP_DIR=./tmp
 FAILED_DIR=./error
+ARCHIVER="./wayback-archiver.sh"
 TIMEMAP_BASE=http://web.archive.org/web/timemap/link/
 SEND_ATTEMPTS=2
 LOCK_FILE=${TEMP_DIR}/lock
+
+source .env
 
 # Set a sleep to keep from getting blocked from Web archives with too
 # many exists
@@ -80,12 +83,11 @@ EOF
     exponential-backoff-tool -a -M -r $SEND_ATTEMPTS -e "x*x" "ldn-sender ${ACTOR_INBOX} ${TEMP_DIR}/announce.jsonld"
 
     if [ $? -eq 0 ]; then
-        info "done 👍"
+        info "👍 done ${OBJECT}"
     else 
         D=$(date +%Y%m%d%H%M%S)
-        error "failed 👎"
+        error "👎 failed ${OBJECT}"
         mv ${TEMP_DIR}/announce.jsonld ${FAILED_DIR}/${D}-$$-announce.jsonld
-        mv ${TEMP_DIR}/wayback.output ${FAILED_DIR}/${D}-$$-wayback.output
     fi
 }
 
@@ -110,7 +112,13 @@ info "locking $LOCKFILE"
 touch $LOCK_FILE
 
 info "scanning ./inbox"
+COUNT=0
 for f in ./inbox/*.jsonld ; do
+    if [ "${COUNT}" != 0 ]; then
+        info "sleeping $SLEEP seconds..."
+        sleep $SLEEP
+    fi
+
     info "processing $f..."
     
     ACTIVITY_ID=$(jq -r ".id" $f)
@@ -120,10 +128,9 @@ for f in ./inbox/*.jsonld ; do
     ACTOR_TYPE=$(jq -r ".actor.type" $f)
     OBJECT=$(jq -r ".object.id" $f)
 
-    rm -f $f
-
     if [[ "${ACTIVITY_ID}" == "" ]]; then
        error "no activity id found in $f"
+       mv $f $FAILED_DIR
        continue
     fi
     if [[ "${ACTOR_ID}" == "" ]] || 
@@ -135,25 +142,30 @@ for f in ./inbox/*.jsonld ; do
     fi
     if [ "${OBJECT}" == "" ]; then
         error "no object.id found in $f"
+        mv $f $FAILED_DIR
         continue
     fi
 
     info "actor = ${ACTOR_ID} @ ${ACTOR_INBOX}"
     info "object = ${OBJECT}"
 
-    info "starting wayback on ${OBJECT}"
-    wayback --ia --ip=false --is=false --ph=false --ga=false ${OBJECT} > ${TEMP_DIR}/wayback.output 2>&1
+    info "starting archiver ${ARCHIVER} on ${OBJECT}"
 
-    info "wayback done..."
+    ARCHIVED_URL=$(${ARCHIVER} "${OBJECT}")
 
-    ARCHIVED_URL=$(grep "IA: " ${TEMP_DIR}/wayback.output | sed -e 's/.*IA: //')
+    info "archiver done..."
 
-    info "extracted ${ARCHIVED_URL}"
+    if [ "${ARCHIVED_URL}" == "" ]; then
+        error "failed to generated archived url"
+        mv $f $FAILED_DIR
+    else
+        info "extracted ${ARCHIVED_URL}"
+        send_announce
+    fi
 
-    send_announce
+    rm -f $f
 
-    info "sleeping $SLEEP seconds..."
-    sleep $SLEEP
+    COUNT=$((COUNT+1))
 done
 
 info "done"
