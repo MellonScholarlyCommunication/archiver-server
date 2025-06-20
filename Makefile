@@ -18,7 +18,7 @@ docker-run:
 docker-interactive:
 	docker run --rm -v `pwd`/tmp:/app/tmp -v `pwd`/inbox:/app/inbox -v `pwd`/error:/app/error -it hochstenbach/archiver-server:v0.0.1 sh
 
-push:
+docker-push:
 	docker push hochstenbach/archiver-server:v0.0.1
 
 unlock:
