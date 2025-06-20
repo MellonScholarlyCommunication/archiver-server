@@ -32,6 +32,6 @@ RUN npm install -g pm2
 
 RUN  mkdir inbox error tmp
 
-EXPOSE 3006
+EXPOSE 3007
 
 CMD [ "pm2-runtime" , "start", "ecosystem.config.js" ]
